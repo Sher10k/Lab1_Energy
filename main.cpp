@@ -8,6 +8,75 @@
 using namespace std;
 using namespace cv;
 
+// --
+void erosion(const Mat &input_img, Mat &output_img, int apert)
+{
+    output_img = Mat::zeros(input_img.size(), CV_8U);
+    for (int i = (apert / 2); i < input_img.cols - (apert / 2); i++) { 
+        for (int j = (apert / 2); j < input_img.rows - (apert / 2); j++) {
+            //uchar pix_value = input_img.at<uchar>(j, i);
+            uchar min = 255;
+            for (int ii = 0 - (apert / 2); ii <= (apert / 2); ii++) {
+                for (int jj = 0 - (apert / 2); jj <= (apert / 2); jj++) {
+                    uchar Y = input_img.at<uchar>(j + jj, i + ii);
+                    if (Y < min) min = Y;
+                }
+            }
+            output_img.at<uchar>(j, i) = min;
+        }
+    }
+} 
+
+// ++
+void dilatac(const Mat &input_img, Mat &output_img, int apert) 
+{
+    output_img = Mat::zeros(input_img.size(), CV_8U);
+    for (int i = (apert / 2); i < input_img.cols - (apert / 2); i++) {
+        for (int j = (apert / 2); j < input_img.rows - (apert / 2); j++) {
+            //uchar pix_value = input_img.at<uchar>(j, i);
+            uchar max = 0;
+            for (int ii = 0 - (apert / 2); ii <= (apert / 2); ii++) {
+                for (int jj = 0 - (apert / 2); jj <= (apert / 2); jj++) {
+                    uchar Y = input_img.at<uchar>(j + jj, i + ii);
+                    if (Y > max) max = Y;
+                }
+            }
+            output_img.at<uchar>(j, i) = max;
+        } 
+    } 
+} 
+
+void Roberts(const Mat &input_img, Mat &output_img)
+{
+    output_img = Mat::zeros(input_img.size(), CV_8U);
+    float Rf1[3][3] = { {  1,  1,  1 },
+                        {  1, -2,  1 },
+                        { -1, -1, -1 } };
+    
+    float Rf2[3][3] = { { -1,  1,  1 },
+                        { -1, -2,  1 },
+                        { -1,  1,  1 } };
+    
+    float Rf3[3][3] = { { -1, -1,  1 },
+                        { -1, -2,  1 },
+                        {  1,  1,  1 } };
+    for ( int i = 1; i < input_img.cols - 1; i++ ) 
+    {
+        for ( int j = 1; j < input_img.rows - 1; j++ ) 
+        { 
+            
+            
+            for ( int ii = -1; ii <= 1; ii++ )
+            {
+                for ( int jj = -1; jj <= 1; jj++ ) 
+                {
+                    
+                }
+            } 
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
