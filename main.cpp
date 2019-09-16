@@ -9,8 +9,6 @@
 using namespace std;
 using namespace cv;
 
-Mat draw_strobe(const Mat image, int n); // Ôóíêöèÿ äëÿ íàëîæåíèå ñòðîáà íà îáúåêò
-Mat draw_arctangle_new(const Mat image_horizon, const Mat image_vertical, Mat img_m, Mat image);
 // --
 void erosion(const Mat &input_img, Mat &output_img, int apert)
 {
@@ -120,6 +118,54 @@ void Hist( Mat img, Mat &hh, Mat &hv)
     }
 }
 
+Mat draw_arctangle_new( const Mat img_horizon, const Mat img_vertical, Mat img )
+{
+	int level1 = 1;
+	int level2 = 1;
+    vector< int > X;
+    vector< int > Y;
+    
+    bitwise_not( img_horizon, img_horizon );
+    bitwise_not( img_vertical, img_vertical );
+    bool truelevel = false;
+    for ( int i = 0; i < img.cols; i++ )
+    {
+        int intensity = countNonZero( img_horizon.col(i) );
+        if ( (intensity >= level1) && (!truelevel) ) 
+        {
+            X.push_back( i );
+            truelevel = true;
+        }
+        else if ( (intensity < level1) && (truelevel) )
+        {
+            X.push_back( i-1 );
+            truelevel = false;
+        }
+        if ( (intensity >= level1) && (i == img.cols-1) )
+            X.push_back( i );
+    }
+    truelevel = false;
+    for ( int j = 0; j < img.rows; j++ )
+    {
+        int intensity = countNonZero( img_vertical.row(j) );
+        if ( (intensity >= level2) && (!truelevel) ) 
+        {
+            Y.push_back( j );
+            truelevel = true;
+        }
+        else if ( (intensity < level2) && (truelevel) )
+        {
+            Y.push_back( j-1 );
+            truelevel = false;
+        }
+        if ( (intensity >= level2) && (j == img.rows-1) )
+            Y.push_back( j );
+    }
+    rectangle(img, Point(X.at(0), Y.at(0)), Point(X.at(1), Y.at(1)), Scalar(0, 0, 255), 2, 8, 0);
+    rectangle(img, Point(X.at(2), Y.at(0)), Point(X.at(3), Y.at(1)), Scalar(0, 0, 255), 2, 8, 0);
+	return img;
+}
+
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
@@ -187,8 +233,6 @@ int main(int argc, char *argv[])
         // Morphological operations
     Mat img_temp = Mat::zeros( img_and.size(), img_and.type() );
     Mat img_morf = Mat::zeros( img_and.size(), img_and.type() );
-//    dilatac( img_and, img_open, 3 );
-//    dilatac( img_open, img_and, 3 );
     Mat element = getStructuringElement( MORPH_RECT, Size(10, 10), Point(-1, -1) );
     morphologyEx( img_and, img_temp, MORPH_OPEN, element );
     morphologyEx( img_temp, img_morf, MORPH_CLOSE, element );
@@ -205,152 +249,11 @@ int main(int argc, char *argv[])
     
         // Strobe
     Mat img_finish;
-    img_finish = draw_arctangle_new( hist_horizon, hist_vertical, img_morf, img_in1 );
+    img_finish = draw_arctangle_new( hist_horizon, hist_vertical, img_in1 );
     imwrite( "finish.png", img_finish );
-    
     
     waitKey(0);
     return 0;   // a.exec();
 }
 
-Mat draw_arctangle_new( const Mat img_horizon, const Mat img_vertical, Mat img_m, Mat img )
-{
-	int level1 = 1;
-	int level2 = 1;
-    vector< int > X;
-    vector< int > Y;
-    vector< int > X_buf;
-    vector< int > Y_buf;
-    
-    
-	int x1, y1, x2, y2;
-	int k = 0;
-	for (int i = 0; i < img_horizon.rows; i++)
-		if (img_horizon.at<unsigned char>(i, 0) == 0)
-			k = img_horizon.rows - i;
-	if (k > level1)
-		x1 = k;
-	else x1 = 0;
-	for (int i = 1; i < img_horizon.cols; i++)
-	{
-		for (int j = 0; j < img_horizon.rows; j++) {
-			if ((img_horizon.at<unsigned char>(j, i) == 0))
-			{
-				if ((j < img_horizon.rows - level1) && (k < level1))
-				{
-					k = img_horizon.cols - j;
-					x1 = i;
-				}
-				else if (j < img_horizon.rows - level1)
-					break;
-				else if ((j >= img_horizon.rows - level1) && (k > level1))
-				{
-					k = 0;
-					x2 = i - 1;
-				}
-				break;
-			}
-			else if ((j == img_horizon.rows - 1) && (k > level1))
-			{
-				k = 0;
-				x2 = i - 1;
-			}
-		}
-	}
-	for (int i = 0; i < img_vertical.cols; i++)
-		if (img_vertical.at<unsigned char>(0, i) == 0)
-			k = img_vertical.rows - i;
-	if (k > level2)
-		y1 = k;
-	else y1 = 0;
-	for (int i = 1; i < img_vertical.rows; i++)
-	{
-		for (int j = 0; j < img_vertical.cols; j++) {
-			if ((img_vertical.at<unsigned char>(i, j) == 0))
-			{
-				if ((j < img_vertical.cols - level2) && (k < level2))
-				{
-					k = img_vertical.cols - j;
-					y1 = i;
-				}
-				else if (j < img_vertical.cols - level2)
-					break;
-				else if ((j >= img_vertical.cols - level2) && (k > level2))
-				{
-					k = 0;
-					y2 = i - 1;
-				}
-				break;
-			}
-			else if ((j == img_vertical.cols - 1) && (k > level2))
-			{
-				k = 0;
-				y2 = i - 1;
-			}
-		}
-	}
-	rectangle(img, Point(x1, y1), Point(x2, y2), Scalar(0, 0, 255), 2, 8, 0);
-    
-    
-    
-    bitwise_not( img_horizon, img_horizon );
-    bitwise_not( img_vertical, img_vertical );
-    bool truelevel = false;
-    int sizeBuf = 0;
-    for ( int i = 0; i < img.cols; i++ )
-    {
-        int intensity = countNonZero( img_horizon.col(i) );
-        if ( intensity >= level1 ) 
-        {
-            sizeBuf += intensity;
-            if( !truelevel )  
-            {
-                X.push_back( i );
-                truelevel = true;
-            }
-        }
-        else if ( (intensity < level1) && (truelevel) )
-        {
-            X.push_back( i-1 );
-            X_buf.push_back( sizeBuf );
-            sizeBuf = 0;
-            truelevel = false;
-        }
-        if ( (intensity >= level1) && (i == img.cols-1) )
-        {
-            X.push_back( i );
-            X_buf.push_back( sizeBuf );
-            sizeBuf = 0;
-        }
-    }
-    truelevel = false;
-    for ( int j = 0; j < img.rows; j++ )
-    {
-        int intensity = countNonZero( img_vertical.row(j) );
-        if ( intensity >= level2 ) 
-        {
-            sizeBuf += intensity;
-            if( !truelevel )  
-            {
-                Y.push_back( j );
-                truelevel = true;
-            }
-        }
-        else if ( (intensity < level2) && (truelevel) )
-        {
-            Y.push_back( j-1 );
-            Y_buf.push_back( sizeBuf );
-            sizeBuf = 0;
-            truelevel = false;
-        }
-        if ( (intensity >= level2) && (j == img.rows-1) )
-        {
-            Y.push_back( j );
-            Y_buf.push_back( sizeBuf );
-            sizeBuf = 0;
-        }
-    }
-    
-    
-	return img;
-}
+
