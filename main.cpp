@@ -52,50 +52,24 @@ void dilatac(const Mat &input_img, Mat &output_img, int apert)
 void Roberts(const Mat &input_img, Mat &output_img)
 {
     output_img = Mat::zeros( input_img.size(), input_img.type() );
-    int Rf1[3][3] = { {  1,  1,  1 },
-                        {  1, -2,  1 },
-                        { -1, -1, -1 } };
+    Mat Rf1 = ( Mat_< char >(3,3) << 1,  1, 1, 
+                                      1, -2, 1, 
+                                     -1, -1,-1 );
+    Mat Rf2 = ( Mat_< char >(3,3) << -1,  1, 1, 
+                                      -1, -2, 1, 
+                                      -1,  1, 1 );
+    Mat Rf3 = ( Mat_< char >(3,3) << -1, -1, 1, 
+                                      -1, -2, 1, 
+                                       1,  1, 1 );
     
-    int Rf2[3][3] = { { -1,  1,  1 },
-                        { -1, -2,  1 },
-                        { -1,  1,  1 } };
+    Mat img_Rf1, img_Rf2, img_Rf3;
     
-    int Rf3[3][3] = { { -1, -1,  1 },
-                        { -1, -2,  1 },
-                        {  1,  1,  1 } };
-    Mat img_Rf1 = Mat::zeros( input_img.size(), input_img.type() );
-    Mat img_Rf2 = Mat::zeros( input_img.size(), input_img.type() );
-    Mat img_Rf3 = Mat::zeros( input_img.size(), input_img.type() );
-    for ( int i = 1; i < input_img.cols - 1; i++ ) 
-    {
-        for ( int j = 1; j < input_img.rows - 1; j++ ) 
-        {
-            int pix_Rf1 = 0, pix_Rf2 = 0, pix_Rf3 = 0;
-            for ( int ii = -1; ii <= 1; ii++ )
-            {
-                for ( int jj = -1; jj <= 1; jj++ ) 
-                {
-                    pix_Rf1 += input_img.at< uchar >(j + jj, i + ii) * Rf1[jj+1][ii+1];
-                    pix_Rf2 += input_img.at< uchar >(j + jj, i + ii) * Rf2[jj+1][ii+1];
-                    pix_Rf3 += input_img.at< uchar >(j + jj, i + ii) * Rf3[jj+1][ii+1];
-                }
-            }
-            if ( pix_Rf1 < 0 ) pix_Rf1 = 0;
-            else if ( pix_Rf1 > 255 ) pix_Rf1 = 255;
-            img_Rf1 = pix_Rf1;
-            if ( pix_Rf2 < 0 ) pix_Rf2 = 0;
-            else if ( pix_Rf2 > 255 ) pix_Rf2 = 255;
-            img_Rf2 = pix_Rf2;
-            if ( pix_Rf3 < 0 ) pix_Rf3 = 0;
-            else if ( pix_Rf3 > 255 ) pix_Rf3 = 255;
-            img_Rf3 = pix_Rf3;
-        }
-    }
-    Mat img_Rf12 = Mat::zeros( input_img.size(), input_img.type() );
-    addWeighted( img_Rf1, 1.0, img_Rf2, 1.0, 0, img_Rf12 );
-    addWeighted( img_Rf12, 1.0, img_Rf3, 1.0, 0, output_img );
-    //Mat roberts = ( Mat_<uchar>(3,3) << 1,1,1, 1,1,1, 1,1,1 );
-    //filter2D()
+    filter2D( input_img, img_Rf1, -1, Rf1 );
+    filter2D( input_img, img_Rf2, -1, Rf2 );
+    filter2D( input_img, img_Rf3, -1, Rf3 );
+    
+    addWeighted( img_Rf1, 1.0, img_Rf2, 1.0, 0, output_img );
+    addWeighted( output_img, 1.0, img_Rf3, 1.0, 0, output_img );
 }
 
 void Sobel(const Mat &input_img, Mat &output_img)
@@ -184,8 +158,8 @@ int main(int argc, char *argv[])
         // Edge
     Mat img_edge1;
 //    Canny( img_grey1, img_edge1, 70, 150, 3, false );
-//    Roberts( img_grey1, img_edge1 );
-    Sobel( img_grey1, img_edge1 );
+//    Sobel( img_grey1, img_edge1 );
+    Roberts( img_grey1, img_edge1 );
     imwrite( "img_edge1.png", img_edge1 );
     
         // Binarization
@@ -199,7 +173,7 @@ int main(int argc, char *argv[])
     idbe.copyTo( img_diff_bin );
     imwrite( "img_diff_bin.png", img_diff_bin );
     
-    threshold( img_edge1, img_edge1_bin, 30, 255, THRESH_BINARY  );   // THRESH_BINARY_INV THRESH_BINARY
+    threshold( img_edge1, img_edge1_bin, 10, 255, THRESH_BINARY  );   // THRESH_BINARY_INV THRESH_BINARY
     imwrite( "img_edge1_bin.png", img_edge1_bin );
     
         // Logical AND
@@ -219,9 +193,9 @@ int main(int argc, char *argv[])
     morphologyEx( img_and, img_temp, MORPH_OPEN, element );
     morphologyEx( img_temp, img_morf, MORPH_CLOSE, element );
     imwrite( "img_morfolog_1.png", img_morf );
-    morphologyEx( img_morf, img_temp, MORPH_OPEN, element );
-    morphologyEx( img_temp, img_morf, MORPH_CLOSE, element );
-    imwrite( "img_morfolog_2.png", img_morf );
+//    morphologyEx( img_morf, img_temp, MORPH_OPEN, element );
+//    morphologyEx( img_temp, img_morf, MORPH_CLOSE, element );
+//    imwrite( "img_morfolog_2.png", img_morf );
     
         // Histogram
     Mat hist_vertical, hist_horizon;
