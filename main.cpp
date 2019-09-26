@@ -169,6 +169,7 @@ Mat draw_arctangle_new( const Mat img_horizon, const Mat img_vertical, Mat img )
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
+    Mat temp;
 
         // Read image
     Mat img_in1 = imread( "image_1.png", 3 );
@@ -199,14 +200,16 @@ int main(int argc, char *argv[])
 //    for ( int i = 0; i < img_diff.total(); i++ )
 //        img_diff.at< uchar >(i) = abs(img_grey2.at< uchar >(i) - img_grey1.at< uchar >(i));
     absdiff( img_grey1, img_grey2, img_diff );
-    imwrite( "img_diff.png", img_diff );
+    bitwise_not( img_diff, temp );      // invertion fo word
+    imwrite( "img_diff.png", temp );
     
         // Edge
     Mat img_edge1;
 //    Canny( img_grey1, img_edge1, 70, 150, 3, false );
 //    Sobel( img_grey1, img_edge1 );
     Roberts( img_grey1, img_edge1 );
-    imwrite( "img_edge1.png", img_edge1 );
+    bitwise_not( img_edge1, temp );      // invertion fo word
+    imwrite( "img_edge1.png", temp );
     
         // Binarization
     Mat img_edge1_bin, img_diff_bin;
@@ -217,10 +220,12 @@ int main(int argc, char *argv[])
     Mat idbe;
     erosion( img_diff_bin, idbe, 3 );
     idbe.copyTo( img_diff_bin );
-    imwrite( "img_diff_bin.png", img_diff_bin );
+    bitwise_not( img_diff_bin, temp );      // invertion fo word
+    imwrite( "img_diff_bin.png", temp );
     
     threshold( img_edge1, img_edge1_bin, 10, 255, THRESH_BINARY  );   // THRESH_BINARY_INV THRESH_BINARY
-    imwrite( "img_edge1_bin.png", img_edge1_bin );
+    bitwise_not( img_edge1_bin, temp );     // invertion fo word
+    imwrite( "img_edge1_bin.png", temp );
     
         // Logical AND
     Mat img_and = img_diff.clone();
